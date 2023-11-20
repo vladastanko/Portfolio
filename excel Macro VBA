@@ -1,0 +1,244 @@
+Sub Print_UI(control As IRibbonControl)
+    GenerateLabel_Up7_2
+End Sub
+Sub GenerateLabel_Up7_2()
+
+    Application.ScreenUpdating = False
+
+    Dim WB As Workbook
+    Dim srcSheet As Worksheet
+    Dim destSheet As Worksheet
+    
+        Dim foundCell As Range
+        Dim firstAddress As String
+    
+    Dim lastRow As Long
+    Dim i As Long
+    Dim q As Long
+    Dim Quantity As Long
+    Dim proceed As VbMsgBoxResult
+    
+    'Set the source and destination sheets
+    Set WB = ThisWorkbook
+    Set srcSheet = WB.Sheets("Database Sheet")
+    Set destSheet = WB.Sheets("Label Template 1-1")
+    
+    'Clear
+    destSheet.Columns("B").ClearContents
+    destSheet.Columns("E").ClearContents
+    
+    'Get the last row in the database sheet
+    lastRow = srcSheet.Cells(srcSheet.Rows.Count, "I").End(xlUp).Row
+    
+    Set foundCell = destSheet.UsedRange.Find(What:="VENDOR NAME", LookIn:=xlValues, searchdirection:=xlNext, searchorder:=xlByRows)
+    'foundCell.Select
+    firstAddress = foundCell.Address
+    
+    ' Initialize counter for Case Numbers
+    Dim CaseCounter As Long
+    CaseCounter = 1
+    
+    'Loop through each row and copy the values to the destination sheet
+    For i = 2 To lastRow 'Assuming first row is header
+        
+        ColK = srcSheet.Cells(i, 11).Value 'K column
+        ColL = srcSheet.Cells(i, 12).Value 'L column
+        ColM = srcSheet.Cells(i, 13).Value 'M column
+        ColB = "'" & srcSheet.Cells(i, 2).Value 'B column
+        ColD = srcSheet.Cells(i, 4).Value 'D column
+        ColGH = srcSheet.Cells(i, 7).Value & " " & srcSheet.Cells(i, 8).Value 'G & H columns
+        ColN = srcSheet.Cells(i, 14).Value 'N column
+                
+        Quantity = srcSheet.Cells(i, 9).Value
+        
+        For q = 1 To Quantity
+            
+            Set foundCell = destSheet.UsedRange.FindNext(foundCell)
+            'foundCell.Select
+                
+            ' Insert Case Number before ColL
+            destSheet.Cells(foundCell.Row + 1, foundCell.Column + 1).Value = CaseCounter
+            
+            ' Increment CaseCounter
+            CaseCounter = CaseCounter + 1
+            
+            ' Copy other values
+            destSheet.Cells(foundCell.Row, foundCell.Column + 1).Value = ColK
+            destSheet.Cells(foundCell.Row + 2, foundCell.Column + 1).Value = ColL
+            destSheet.Cells(foundCell.Row + 3, foundCell.Column + 1).Value = ColM
+            destSheet.Cells(foundCell.Row + 4, foundCell.Column + 1).Value = ColB
+            destSheet.Cells(foundCell.Row + 5, foundCell.Column + 1).Value = ColD
+            destSheet.Cells(foundCell.Row + 6, foundCell.Column + 1).Value = ColGH
+            destSheet.Cells(foundCell.Row + 7, foundCell.Column + 1).Value = ColN
+                
+            c = c + 1
+                
+            If foundCell Is Nothing And foundCell.Address = firstAddress Then Exit Sub
+        
+        Next q
+        
+        ' Reset CaseCounter when Vendor Name changes
+        If srcSheet.Cells(i, 11).Value <> srcSheet.Cells(i + 1, 11).Value Then
+            CaseCounter = 1
+        End If
+        
+    Next i
+        
+    Application.ScreenUpdating = True
+    
+End Sub
+
+Sub GenerateLabel_Up7()
+
+    Application.ScreenUpdating = False
+
+    Dim WB As Workbook
+    Dim srcSheet As Worksheet
+    Dim destSheet As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim Quantity As Long
+    Dim proceed As VbMsgBoxResult
+    
+    'Set the source and destination sheets
+    Set WB = ThisWorkbook
+    Set srcSheet = WB.Sheets("Database Sheet")
+    Set destSheet = WB.Sheets("Label Template 1-1")
+        
+    'Get the last row in the database sheet
+    lastRow = srcSheet.Cells(srcSheet.Rows.Count, 1).End(xlUp).Row
+    
+    'Loop through each row and copy the values to the destination sheet
+    For i = 2 To lastRow 'Assuming first row is header
+        
+        With destSheet
+            .Range("B7").Value = srcSheet.Cells(i, 11).Value 'K column
+            .Range("C8").Value = srcSheet.Cells(i, 12).Value 'L column
+            .Range("C9").Value = srcSheet.Cells(i, 13).Value 'M column
+            .Range("C10").Value = "'" & srcSheet.Cells(i, 2).Value 'B column
+            .Range("C11").Value = srcSheet.Cells(i, 4).Value 'D column
+            .Range("C12").Value = srcSheet.Cells(i, 7).Value & " " & srcSheet.Cells(i, 8).Value 'G & H columns
+            .Range("B13").Value = srcSheet.Cells(i, 14).Value 'N column
+        End With
+        
+        'Get the quantity from the QTY column
+        Quantity = srcSheet.Cells(i, 9).Value
+        
+        'Print the Label Template sheet with multiple copies based on the quantity
+        destSheet.PrintOut Copies:=Quantity
+        
+        'Ask the user if they want to proceed to the next loop
+        If i < lastRow Then
+            proceed = MsgBox("Printed " & Quantity & " label(s) for row " & i & ". Do you want to proceed to the next row?", vbQuestion + vbYesNo)
+            If proceed = vbNo Then
+                MsgBox "Printing cancelled. Total labels printed: " & (i - 1) * Quantity
+                Exit For
+            End If
+        End If
+        
+    Next i
+    
+    Application.ScreenUpdating = True
+    
+End Sub
+Private Sub GenerateLabel()
+    
+    Dim WB As Workbook
+    Dim srcSheet As Worksheet
+    Dim destSheet As Worksheet
+    Dim selectedRow As Long
+    
+    'Set the source and destination sheets
+    Set WB = ThisWorkbook
+    Set srcSheet = WB.Sheets("Database Sheet")
+    Set destSheet = WB.Sheets("Label Template")
+    
+    If Not ActiveSheet.Name = srcSheet.Name Or Selection.Row = 1 Then
+        MsgBox "Please! select a Cell/Row of Label from sheet '" & srcSheet.Name & "' and run it again.", vbOKOnly + vbCritical
+        Exit Sub
+    End If
+
+
+    'Get the selected row
+    selectedRow = Selection.Row
+    
+    destSheet.Activate
+    
+    'Copy the values to the destination sheet
+    With destSheet
+        .Range("B7").Value = srcSheet.Cells(selectedRow, 11).Value         'K column
+        .Range("C8").Value = srcSheet.Cells(selectedRow, 12).Value         'L column
+        .Range("C9").Value = srcSheet.Cells(selectedRow, 13).Value         'M column
+        .Range("C10").Value = "'" & srcSheet.Cells(selectedRow, 2).Value   'B column
+        .Range("C11").Value = srcSheet.Cells(selectedRow, 4).Value         'D column
+        .Range("C12").Value = srcSheet.Cells(selectedRow, 7).Value & " " & srcSheet.Cells(selectedRow, 8).Value   'G & H columns
+        .Range("B13").Value = srcSheet.Cells(selectedRow, 14).Value        'N column
+    End With
+    
+    'Print the Label Template sheet
+    destSheet.PrintOut
+    
+End Sub
+Private Sub GenerateLabel_Up()
+
+    Dim WB As Workbook
+    Dim srcSheet As Worksheet
+    Dim destSheet As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim Quantity As Long
+    
+    'Set the source and destination sheets
+    Set WB = ThisWorkbook
+    Set srcSheet = WB.Sheets("Database Sheet")
+    Set destSheet = WB.Sheets("Label Template")
+        
+    'Get the last row in the database sheet
+    lastRow = srcSheet.Cells(srcSheet.Rows.Count, 1).End(xlUp).Row
+    
+    'Loop through each row and copy the values to the destination sheet
+    For i = 2 To lastRow 'Assuming first row is header
+        
+        With destSheet
+            .Range("B7").Value = srcSheet.Cells(i, 11).Value 'K column
+            .Range("C8").Value = srcSheet.Cells(i, 12).Value 'L column
+            .Range("C9").Value = srcSheet.Cells(i, 13).Value 'M column
+            .Range("C10").Value = "'" & srcSheet.Cells(i, 2).Value 'B column
+            .Range("C11").Value = srcSheet.Cells(i, 4).Value 'D column
+            .Range("C12").Value = srcSheet.Cells(i, 7).Value & " " & srcSheet.Cells(i, 8).Value 'G & H columns
+            .Range("B13").Value = srcSheet.Cells(i, 14).Value 'N column
+        End With
+        
+        'Get the quantity from the QTY column
+        Quantity = srcSheet.Cells(i, 9).Value
+        
+        'Print the Label Template sheet with multiple copies based on the quantity
+        destSheet.PrintOut Copies:=Quantity
+        
+        
+    Next i
+    
+End Sub
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+    Dim dbSheet As Worksheet
+    Dim labelSheet As Worksheet
+    Dim rng As Range
+    Dim cell As Range
+
+
+    Set dbSheet = ThisWorkbook.Sheets("Database Sheet")
+
+    Set labelSheet = ThisWorkbook.Sheets("Label Template 1-1")
+
+
+    If Not Intersect(Target, dbSheet.Columns("K")) Is Nothing Then
+        For Each rng In labelSheet.UsedRange
+            If rng.Value = Target.Value Then
+                rng.Value = Target.Value ' Ako pronađe isti naziv, ažurirajte ga
+            End If
+        Next rng
+    End If
+End Sub
+
+
